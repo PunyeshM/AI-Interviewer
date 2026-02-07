@@ -1,0 +1,106 @@
+# Project: InterviewDost - AI Mock Interview Platform
+
+## 1. Overview
+InterviewDost is an AI-powered mock interview platform that helps candidates prepare for job interviews. The system simulates a real interview environment using an interactive AI Avatar, records the session, analyzes user responses, and provides detailed feedback and scoring.
+
+## 2. Tech Stack
+
+### Frontend (Client Side)
+- **Framework**: React (v18) built with Vite (v6).
+- **Language**: TypeScript.
+- **Styling**: TailwindCSS (v4) for utility-first styling, combined with Framer Motion for animations.
+- **Routing**: React Router DOM (v7).
+- **State Management**: React Context API (AuthContext).
+- **Components & UI**:
+    - Radix UI primitives for accessible components (Dialog, Dropdown, Tabs, etc.).
+    - Lucide React for consistent iconography.
+    - Recharts for performance visualization graphs.
+    - Sonner for toast notifications.
+- **Media Handling**: `react-media-recorder` for capturing functionality (video/audio).
+- **HTTP Client**: Native `fetch` API via a custom wrapper (`apiPost`, `apiGet`).
+
+### Backend (Server Side)
+- **Framework**: FastAPI (Python).
+- **Server**: Uvicorn.
+- **ORM**: SQLAlchemy.
+- **Database**: 
+    - Supports SQLite for development.
+    - Production-ready for PostgreSQL (via `psycopg2-binary`).
+- **Data Validation**: Pydantic schemas.
+- **Authentication**: JWT (JSON Web Tokens) via `python-jose` and `passlib` for password hashing.
+- **Utilities**:
+    - `PyPDF2` for resume parsing from PDF files.
+    - `requests` for external API communication.
+    - `python-dotenv` for environment variable management.
+
+## 3. External Services & Integrations
+
+### AI Services
+- **Tavus (Conversational Video Interface)**: 
+    - Powers the interactive AI Avatar.
+    - Handles generating the unique conversation URL.
+    - Provides real-time transcript streaming.
+- **Google Gemini (Generative AI)**:
+    - Analyzes candidate resumes.
+    - Generates dynamic interview questions based on role and resume.
+    - Evaluates candidate answers for relevance and confidence.
+    - Generates comprehensive feedback summaries.
+
+### Cloud Storage
+- **Cloudinary**:
+    - Stores recorded interview videos.
+    - Provides secure upload signatures via backend.
+    - Delivers optimized video streaming for results playback.
+
+### Authentication & DB (Optional/Alternative)
+- **Supabase**: referenced in dependencies, potentially used for Auth/DB in some configurations.
+
+## 4. Implementation Details
+
+### Database Schema
+Key tables managed via SQLAlchemy:
+- **Users**: Stores candidate accounts, hashed passwords, and profile summaries.
+- **Interviews**: Tracks individual sessions, including status (Scheduled, In Progress, Completed), scores, and links to recordings/transcripts.
+- **Questions**: Stores generated questions for each interview.
+- **Responses**: Stores candidate answers and their individual AI evaluation scores.
+- **Feedbacks**: High-level summary and suggestions generated after the interview.
+
+### Key Workflows
+
+#### A. Interview Setup
+1. User logs in and provides details (Role, Skills).
+2. Backend (Gemini) analyzes the profile and generates 5 custom questions.
+3. Backend initializes a Tavus conversation context with these questions.
+4. Deployment returns a `conversation_url` to the frontend.
+
+#### B. Live Interview
+1. Frontend embeds the Tavus iframe.
+2. User grants camera/mic permissions.
+3. **Recording**: Frontend records the user's video locally using `react-media-recorder`.
+4. **Transcription**: Frontend polls the backend, which fetches the live transcript from Tavus in real-time.
+5. **Answer Evaluation**: 
+    - As the user speaks, transcripts are sent to the backend.
+    - Gemini evaluates the answer text for "Relevance" and "Confidence" scores.
+
+#### C. Completion & Results
+1. User ends the interview.
+2. Frontend uploads the recorded video blob directly to Cloudinary using a signed URL from the backend.
+3. Backend finalizes the interview record:
+    - Fetches the full final transcript from Tavus.
+    - Ends the Tavus active session.
+    - Triggers a final Gemini analysis on the entire conversation to generate overall feedback.
+4. User is redirected to the Results Page to view:
+    - Overall Score.
+    - Playback of their recorded video.
+    - Full transcript.
+    - Detailed per-question breakdown and improvement suggestions.
+
+## 5. Directory Structure
+- `Frontend/`: React application source code.
+    - `src/components`: UI components.
+    - `src/pages`: Main view routes (Dashboard, Interview, Results).
+    - `src/lib`: Helper functions (API wrapper).
+- `Backend/`: FastAPI application.
+    - `app/routers`: API endpoints (auth, interview, admin).
+    - `app/services`: Integrations (tavus_service, gemini_service).
+    - `app/models.py`: Database models.
